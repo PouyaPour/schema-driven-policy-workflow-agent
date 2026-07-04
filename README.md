@@ -1,5 +1,9 @@
 # Schema-Driven Policy Workflow Agent
 
+[![CI](https://github.com/PouyaPour/schema-driven-policy-workflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/PouyaPour/schema-driven-policy-workflow-agent/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 A production-oriented governance layer that evaluates workflow action requests
 **before** execution. Each request is validated against a base schema, matched
 against workflow and action contracts (served through a read-only MCP layer),
