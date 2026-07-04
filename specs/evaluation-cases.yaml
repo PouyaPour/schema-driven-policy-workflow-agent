@@ -1,0 +1,204 @@
+# Evaluation cases for the Schema-Driven Policy Workflow Agent.
+#
+# These assert agent BEHAVIOR (decision + reason codes + evaluation-order
+# precedence), not just unit-level correctness.
+# Most cases assert expected_decision + must_include_reason_code.
+# Formatter immutability cases assert invariant_fields instead.
+#
+# Case numbers map to spec section 19. The order of layers is authoritative
+# (spec 12.1-12.3): the earliest failing layer wins.
+
+eval_cases:
+
+  # 1 --- AUTO_APPROVED -----------------------------------------------------
+  - name: low_risk_report_auto_approved
+    input:
+      request_id: req_0001
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: generate_report
+      action_payload: { report_type: summary, format: pdf }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: AUTO_APPROVED
+    must_include_reason_code: LOW_RISK_ACTION
+
+  # 2 --- REQUIRES_HUMAN_REVIEW (PII triggers OR) ---------------------------
+  - name: pii_report_requires_review
+    input:
+      request_id: req_0002
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: generate_report
+      action_payload: { report_type: summary, format: pdf }
+      risk_context: { contains_pii: true, monetary_value: null }
+    expected_decision: REQUIRES_HUMAN_REVIEW
+    must_include_reason_code: CONTAINS_PII
+
+  # 3 --- REQUIRES_HUMAN_REVIEW (production external action) -----------------
+  - name: production_external_call_requires_review
+    input:
+      request_id: req_0003
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: production
+      target_action: external_api_call
+      action_payload: { endpoint_alias: crm_update, method: POST }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: REQUIRES_HUMAN_REVIEW
+    must_include_reason_code: PRODUCTION_ENVIRONMENT
+
+  # 4 --- BLOCKED_BY_POLICY (action blocked in environment) -----------------
+  - name: local_email_blocked_by_policy
+    input:
+      request_id: req_0004
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: local
+      target_action: send_email
+      action_payload: { recipient: "[[APPROVED_TEST_EMAIL]]", subject: Hi, body: Welcome }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_BY_POLICY
+    must_include_reason_code: ACTION_BLOCKED_IN_ENVIRONMENT
+
+  # 5 --- BLOCKED_UNKNOWN_ACTION (deny by default) --------------------------
+  - name: unknown_action_blocked
+    input:
+      request_id: req_0005
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: production
+      target_action: delete_database
+      action_payload: {}
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_UNKNOWN_ACTION
+    must_include_reason_code: TARGET_ACTION_NOT_DEFINED
+
+  # 6 --- BLOCKED_SCHEMA_INVALID (missing request_id) -----------------------
+  - name: missing_request_id_blocked_schema_invalid
+    input:
+      request_id: null
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: generate_report
+      action_payload: { report_type: summary, format: pdf }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_SCHEMA_INVALID
+    must_include_reason_code: MISSING_REQUIRED_FIELD
+
+  # 7 --- ORDER: schema-invalid beats unknown action ------------------------
+  - name: schema_invalid_beats_unknown_action
+    input:
+      request_id: null
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: production
+      target_action: delete_database
+      action_payload: {}
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_SCHEMA_INVALID
+    must_include_reason_code: MISSING_REQUIRED_FIELD
+
+  # 8 --- ORDER: unknown action beats policy/review -------------------------
+  # Schema valid, workflow known, but action unknown; must not fall through.
+  - name: unknown_action_beats_policy
+    input:
+      request_id: req_0008
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: local
+      target_action: delete_database
+      action_payload: {}
+      risk_context: { contains_pii: true, monetary_value: null }
+    expected_decision: BLOCKED_UNKNOWN_ACTION
+    must_include_reason_code: TARGET_ACTION_NOT_DEFINED
+
+  # 9 --- BLOCKED_BY_POLICY (known action not allowed for workflow) ---------
+  # send_email is a known action, but internal_reporting only allows reports.
+  - name: action_not_allowed_for_workflow
+    input:
+      request_id: req_0009
+      workflow_id: internal_reporting
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: send_email
+      action_payload: { recipient: "[[APPROVED_TEST_EMAIL]]", subject: Hi, body: Welcome }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_BY_POLICY
+    must_include_reason_code: ACTION_NOT_ALLOWED_FOR_WORKFLOW
+
+  # 10 --- BLOCKED_SCHEMA_INVALID (missing required payload field) ----------
+  # send_email requires subject; it is omitted here.
+  - name: invalid_action_payload_blocked
+    input:
+      request_id: req_0010
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: send_email
+      action_payload: { recipient: "[[APPROVED_TEST_EMAIL]]", body: Welcome }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_SCHEMA_INVALID
+    must_include_reason_code: INVALID_ACTION_PAYLOAD
+
+  # 11 --- REQUIRES_HUMAN_REVIEW (monetary value over threshold) ------------
+  - name: monetary_value_requires_review
+    input:
+      request_id: req_0011
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: generate_report
+      action_payload: { report_type: summary, format: pdf }
+      risk_context:
+        contains_pii: false
+        monetary_value: { amount: 250, currency: USD }
+    expected_decision: REQUIRES_HUMAN_REVIEW
+    must_include_reason_code: MONETARY_VALUE_REQUIRES_REVIEW
+
+  # 12 --- Formatter/LLM immutability (structural, spec 19.1) ---------------
+  # This case is verified by the formatter test, not the policy engine:
+  # a finalized decision object passed through message_formatter must keep
+  # decision, risk_level, and reason_codes unchanged.
+  - name: llm_cannot_override_decision
+    type: formatter_immutability
+    finalized_decision:
+      request_id: req_0012
+      decision: BLOCKED_BY_POLICY
+      risk_level: high
+      reason_codes: [ACTION_BLOCKED_IN_ENVIRONMENT]
+    invariant_fields:
+      - decision
+      - risk_level
+      - reason_codes
+
+  # 13 --- ORDER: unknown workflow beats unknown action ---------------------
+  # Both workflow and action are unknown; workflow lookup runs first (spec 12.4).
+  - name: unknown_workflow_beats_unknown_action
+    input:
+      request_id: req_0013
+      workflow_id: unknown_workflow
+      requester: { id: user_1, role: operator }
+      environment: production
+      target_action: delete_database
+      action_payload: {}
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: BLOCKED_BY_POLICY
+    must_include_reason_code: WORKFLOW_NOT_DEFINED
+
+  # 14 --- REQUIRES_HUMAN_REVIEW (high-risk action without PII, spec 10.4) ---
+  # send_email has risk_level: high, so it requires review even with no PII,
+  # no production environment, and no monetary value.
+  - name: high_risk_email_requires_review
+    input:
+      request_id: req_0014
+      workflow_id: customer_onboarding
+      requester: { id: user_1, role: operator }
+      environment: staging
+      target_action: send_email
+      action_payload: { recipient: "[[APPROVED_TEST_EMAIL]]", subject: Hi, body: Welcome }
+      risk_context: { contains_pii: false, monetary_value: null }
+    expected_decision: REQUIRES_HUMAN_REVIEW
+    must_include_reason_code: HIGH_RISK_ACTION

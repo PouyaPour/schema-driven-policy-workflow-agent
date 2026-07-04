@@ -1,0 +1,52 @@
+# Action contract registry. A target_action is valid ONLY if it appears here.
+# Anything else → BLOCKED_UNKNOWN_ACTION (deny by default).
+#
+# Inherent action properties (risk_level, external_side_effect) are TRUSTED
+# and come from this file, never from the runtime request.
+#
+# requires_human_review_when conditions combine with OR semantics: any single
+# matching condition triggers REQUIRES_HUMAN_REVIEW (when that layer is reached).
+
+actions:
+  generate_report:
+    risk_level: low
+    external_side_effect: false
+    required_payload_fields:
+      - report_type
+      - format
+    allowed_environments:
+      - local
+      - staging
+      - production
+    requires_human_review_when: []
+
+  send_email:
+    risk_level: high
+    external_side_effect: true
+    required_payload_fields:
+      - recipient
+      - subject
+      - body
+    allowed_environments:
+      - staging
+      - production
+    blocked_environments:
+      - local
+    requires_human_review_when:
+      - contains_pii
+      - production_environment
+      - external_side_effect
+
+  external_api_call:
+    risk_level: medium
+    external_side_effect: true
+    required_payload_fields:
+      - endpoint_alias
+      - method
+    allowed_environments:
+      - staging
+      - production
+    requires_human_review_when:
+      - production_environment
+      - contains_pii
+      - external_side_effect

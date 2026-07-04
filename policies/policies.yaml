@@ -1,0 +1,41 @@
+# Deterministic policy rules. Read by the policy engine. The LLM never reads or
+# modifies this file to change a decision (llm_can_override_decision: false).
+
+defaults:
+  unknown_action: block        # deny-by-default for undefined target_action
+  unknown_workflow: block      # deny-by-default for undefined workflow_id
+  schema_invalid: block        # fail-closed on invalid schema/payload
+  llm_can_override_decision: false
+  review_condition_operator: OR
+
+auto_approval:
+  allowed_risk_levels:
+    - low
+  allowed_environments:
+    - local
+    - staging
+  requires_no_pii: true
+  requires_no_external_side_effect: true
+
+blocking:
+  local:
+    blocked_actions:
+      - send_email
+      - external_api_call
+      - execute_payment
+
+human_review:
+  condition_operator: OR
+  conditions:
+    - contains_pii
+    - production_environment
+    - high_risk_action
+    - external_side_effect
+    - monetary_value_requires_review
+  monetary_value_threshold:
+    amount_gte: 100
+    currency: USD
+
+idempotency:
+  request_id_required: true
+  duplicate_detection: future_work

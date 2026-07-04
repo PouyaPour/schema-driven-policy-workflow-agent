@@ -1,0 +1,22 @@
+# Workflow contracts: which actions each workflow is allowed to execute.
+# An action can be globally known (defined in action_contracts.yaml) yet still
+# be disallowed for a specific workflow. In that case the decision is
+# BLOCKED_BY_POLICY with reason code ACTION_NOT_ALLOWED_FOR_WORKFLOW.
+#
+# Unknown workflow → BLOCKED_BY_POLICY / WORKFLOW_NOT_DEFINED (deny by default).
+
+workflows:
+  customer_onboarding:
+    allowed_actions:
+      - generate_report
+      - send_email
+      - external_api_call
+
+  internal_reporting:
+    allowed_actions:
+      - generate_report
+
+  incident_escalation:
+    allowed_actions:
+      - generate_report
+      - external_api_call
