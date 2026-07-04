@@ -1,0 +1,9 @@
+{
+  "request_id": "req_ex_001",
+  "workflow_id": "customer_onboarding",
+  "requester": {"id": "user_1", "role": "operator"},
+  "environment": "staging",
+  "target_action": "generate_report",
+  "action_payload": {"report_type": "summary", "format": "pdf"},
+  "risk_context": {"contains_pii": false, "monetary_value": null}
+}

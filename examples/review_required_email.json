@@ -1,0 +1,13 @@
+{
+  "request_id": "req_ex_002",
+  "workflow_id": "customer_onboarding",
+  "requester": {"id": "user_1", "role": "operator"},
+  "environment": "staging",
+  "target_action": "send_email",
+  "action_payload": {
+    "recipient": "[[APPROVED_TEST_EMAIL]]",
+    "subject": "Welcome",
+    "body": "Your onboarding is complete."
+  },
+  "risk_context": {"contains_pii": false, "monetary_value": null}
+}

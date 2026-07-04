@@ -49,6 +49,20 @@ python eval_runner.py           # 14 evaluation cases, exit code 0 (CI-friendly)
 python mcp/client_demo.py       # spawns the MCP server over stdio, calls all 4 tools
 ```
 
+Or with make:
+
+```bash
+make install    # editable install with dev deps
+make check      # pytest + eval runner
+make demo       # run every examples/*.json through the governance agent
+make mcp-demo   # MCP server + client round-trip
+```
+
+`examples/` contains sample requests for the main governance paths
+(auto-approved report, review-required email, locally blocked email, unknown
+action); `scripts/demo.py` runs them all and walks the full HITL
+approve/reject cycle for the review-required case.
+
 ## Quick demo
 
 Run a local governance decision:
@@ -186,6 +200,9 @@ schema-driven-policy-workflow-agent/
 ├── mcp/
 │   ├── server.py                 # read-only FastMCP governance server
 │   └── client_demo.py
+├── examples/                     # one sample request per decision outcome
+├── scripts/demo.py               # runs all examples + the HITL cycle
+├── Makefile
 ├── tests/                        # unit + evaluation-order + behavior + ADK tests
 └── .agents/skills/workflow-policy-review/SKILL.md
 ```
@@ -199,7 +216,8 @@ schema-driven-policy-workflow-agent/
 - **Phase 4 (MCP read-only server):** complete — 4 read-only governance tools verified through `client_demo.py`.
 - **Phase 5 (agent wrapper + HITL):** complete — local governance agent and ADK-style HITL pause/resume through session state, both tested.
 - **Phase 6 (agent skill + polish):** complete — `workflow-policy-review` skill, README, `SUBMISSION.md`.
-- **Phase 7 (optional deployment):** planned.
+- **Phase 7 (demo packaging):** complete — Makefile, `examples/`, `scripts/demo.py`.
+- **Deployment (optional):** intentionally deferred; see Roadmap.
 
 ## Course coverage
 

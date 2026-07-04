@@ -1,0 +1,9 @@
+{
+  "request_id": "req_ex_004",
+  "workflow_id": "customer_onboarding",
+  "requester": {"id": "user_1", "role": "operator"},
+  "environment": "production",
+  "target_action": "delete_database",
+  "action_payload": {},
+  "risk_context": {"contains_pii": false, "monetary_value": null}
+}
