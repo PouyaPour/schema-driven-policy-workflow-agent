@@ -98,11 +98,9 @@ python mcp/client_demo.py
 
 Expected:
 
-- pytest passes (84 tests: unit, evaluation-order, behavior, agent, and ADK
-  integration).
-- eval_runner reports 14 passed, 0 failed, exit code 0.
-- The MCP client lists four read-only governance tools and every lookup
-  succeeds.
+- The full test suite passes; see the CI badge for the current result.
+- eval_runner reports all evaluation cases passed with exit code 0.
+- The MCP client lists four read-only governance tools and every lookup succeeds.
 
 ## Demo Scenarios
 

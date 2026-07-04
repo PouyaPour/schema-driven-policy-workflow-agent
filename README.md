@@ -11,6 +11,17 @@ and evaluated by a **deterministic policy engine**. The LLM is kept out of the
 authority path — it only formats human-review messages and audit summaries,
 while approve / review / block decisions stay reproducible and policy-driven.
 
+## Why I built this
+
+In my backend work on fintech and workflow-automation systems, I often deal with
+actions that must not execute just because an automation selected them. Some
+actions are safe, some need review, and some must be denied by default.
+
+This project turns that production concern into a compact agentic governance
+system: schema contracts define what is allowed, a deterministic policy engine
+makes the decision, MCP exposes read-only context, and the LLM stays outside the
+approval authority path.
+
 ## Why this design
 
 - **Deterministic authority.** Decisions come from the policy engine, not the
